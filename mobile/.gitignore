@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# expo
+.expo/
+expo-env.d.ts
+android/
+ios/
+
+# local env files — never commit
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.*
+
+# os
+.DS_Store
+
+# local runtime artifacts
+*.local.ts
+*.local.js
+dist/
