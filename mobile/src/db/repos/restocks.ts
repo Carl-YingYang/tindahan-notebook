@@ -101,6 +101,12 @@ export function createRestock(input: CreateRestockInput): RestockDTO {
 
   const insertedItems: RestockItemDTO[] = [];
   db.withTransactionSync(() => {
+    // Parent row FIRST — restock_items.restock_id is an immediate FK
+    // (PRAGMA foreign_keys = ON); items before parent would violate it.
+    db.runSync(
+      `INSERT INTO restocks (id, source, supplier, note, total, date, created_at) VALUES (?, ?, ?, ?, 0, ?, ?)`,
+      [restockId, source, trimmedOrNull(input.supplier, 80), trimmedOrNull(input.note, 120), date, now]
+    );
     for (const it of cleanItems) {
       let productId = it.productId;
       let product = productId
@@ -147,10 +153,7 @@ export function createRestock(input: CreateRestockInput): RestockDTO {
       });
     }
 
-    db.runSync(
-      `INSERT INTO restocks (id, source, supplier, note, total, date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [restockId, source, trimmedOrNull(input.supplier, 80), trimmedOrNull(input.note, 120), total, date, now]
-    );
+    db.runSync(`UPDATE restocks SET total = ? WHERE id = ?`, [total, restockId]);
   });
   refreshAll();
 

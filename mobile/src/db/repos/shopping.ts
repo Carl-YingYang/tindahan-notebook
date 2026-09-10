@@ -185,6 +185,13 @@ export function checkoutShoppingList(): RestockDTO {
   let total = 0;
 
   db.withTransactionSync(() => {
+    // Parent row FIRST — restock_items.restock_id is an immediate FK
+    // (PRAGMA foreign_keys = ON) and inserting items before the restocks
+    // row would fail with SQLITE_CONSTRAINT_FOREIGNKEY.
+    db.runSync(
+      `INSERT INTO restocks (id, source, supplier, note, total, date, created_at) VALUES (?, 'shopping_list', NULL, 'Galing sa restock list', 0, ?, ?)`,
+      [restockId, now, now]
+    );
     for (const item of purchased) {
       const qty = item.qty ?? 1;
       const unitPrice = item.est_unit_cost ?? 0;
@@ -220,10 +227,7 @@ export function checkoutShoppingList(): RestockDTO {
       );
     }
 
-    db.runSync(
-      `INSERT INTO restocks (id, source, supplier, note, total, date, created_at) VALUES (?, 'shopping_list', NULL, 'Galing sa restock list', ?, ?, ?)`,
-      [restockId, total, now, now]
-    );
+    db.runSync(`UPDATE restocks SET total = ? WHERE id = ?`, [total, restockId]);
     db.runSync(
       `DELETE FROM shopping_list_items WHERE id IN (${purchased.map(() => "?").join(",")})`,
       purchased.map((p) => p.id)
