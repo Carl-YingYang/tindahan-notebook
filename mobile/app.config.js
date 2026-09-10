@@ -24,7 +24,9 @@ module.exports = {
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#faf9f7",
+      // warm beige from the Tindahan Ko brand logo (#FCEBCB) — splash icon is a
+      // transparent centered lockup; the background itself lives here in config
+      backgroundColor: "#FCEBCB",
     },
     assetBundlePatterns: ["**/*"],
     ios: {
@@ -42,7 +44,8 @@ module.exports = {
       versionCode: 1,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#d97706",
+        // same warm beige as the launcher icon so legacy + adaptive match
+        backgroundColor: "#FCEBCB",
       },
       edgeToEdgeEnabled: true,
       permissions: ["android.permission.CAMERA"],
