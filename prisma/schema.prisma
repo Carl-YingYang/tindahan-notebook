@@ -1,0 +1,147 @@
+// Tindahan Ko — Sari-Sari Store Notebook
+// Local-first SQLite data layer. Intentionally under-normalized:
+// restock items denormalize product names for flexibility.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── UTANG ────────────────────────────────────────────────────────
+
+model Customer {
+  id           String             @id @default(cuid())
+  name         String
+  note         String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  transactions UtangTransaction[]
+
+  @@index([name])
+}
+
+model UtangTransaction {
+  id         String    @id @default(cuid())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type       String    // "utang" | "payment"
+  amount     Float
+  note       String?
+  dueDate    DateTime? // optional "kailan bayad" — only meaningful for type="utang"
+  date       DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  @@index([customerId, date])
+  @@index([dueDate])
+}
+
+// ── DAILY BENTA / GASTOS ─────────────────────────────────────────
+
+model Sale {
+  id        String   @id @default(cuid())
+  amount    Float
+  category  String? // Tindahan | Load | Iba pa
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+model Expense {
+  id        String   @id @default(cuid())
+  amount    Float
+  category  String // Restock | Kuryente | Transportasyon | Renta | Load | Iba pa
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+// ── TINDA / STOCK ────────────────────────────────────────────────
+
+model Product {
+  id                  String    @id @default(cuid())
+  name                String
+  unit                String? // pcs, pack, bote, sachet, resort...
+  stockStatus         String    @default("sakto") // marami | sakto | paubos | ubos
+  lastRestockAt       DateTime?
+  lastRestockQty      Float?
+  lastCost            Float? // last purchase unit cost
+  typicalIntervalDays Int? // typical restock interval
+  note                String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  restockItems        RestockItem[]
+  shoppingItems       ShoppingListItem[]
+
+  @@index([stockStatus])
+}
+
+// ── RESTOCKS ─────────────────────────────────────────────────────
+
+model Restock {
+  id        String        @id @default(cuid())
+  source    String        @default("manual") // manual | receipt | shopping_list
+  supplier  String?
+  note      String?
+  total     Float         @default(0)
+  date      DateTime      @default(now())
+  createdAt DateTime      @default(now())
+  items     RestockItem[]
+}
+
+model RestockItem {
+  id        String   @id @default(cuid())
+  restockId String
+  restock   Restock  @relation(fields: [restockId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name      String
+  qty       Float
+  unitPrice Float    @default(0)
+  total     Float    @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([restockId])
+}
+
+// ── SHOPPING / RESTOCK LIST ──────────────────────────────────────
+
+model ShoppingListItem {
+  id          String    @id @default(cuid())
+  productId   String?
+  product     Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name        String
+  qty         Float?
+  estUnitCost Float?
+  estTotal    Float     @default(0)
+  purchased   Boolean   @default(false)
+  source      String    @default("manual") // manual | low_stock | ai
+  purchasedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([purchased])
+}
+
+// ── SUKI AI ──────────────────────────────────────────────────────
+
+model AiConversation {
+  id        String   @id @default(cuid())
+  role      String // "user" | "assistant"
+  content   String
+  createdAt DateTime @default(now())
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────
+
+model AppSetting {
+  key   String @id
+  value String
+}
