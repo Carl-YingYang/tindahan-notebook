@@ -71,3 +71,7 @@ test
 # local runtime databases (created by `prisma db push`; seed runs automatically)
 /db/*.db
 /db/*.db-journal
+/prisma/db/*.db
+/prisma/db/*.db-journal
+/prisma/db/*.db-wal
+/prisma/db/*.db-shm
