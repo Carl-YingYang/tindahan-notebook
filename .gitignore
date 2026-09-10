@@ -75,3 +75,6 @@ test
 /prisma/db/*.db-journal
 /prisma/db/*.db-wal
 /prisma/db/*.db-shm
+
+# built APK artifacts (delivered via GitHub Releases, not the repo)
+/public/*.apk
